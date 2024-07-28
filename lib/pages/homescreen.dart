@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:todoapp/data/database.dart';
 import 'package:todoapp/utils/dialog_box.dart';
 
 import '../utils/todo_tile.dart';
@@ -11,26 +13,37 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
+  //reference hive 
+  final _myBox = Hive.box('mybox');
+  ToDoDataBase db = ToDoDataBase();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+   if(_myBox.get("TODOLIST") == null){
+    db.createInitialData();
+   } else{
+    db.loadData();
+   }
+    super.initState();
+  }
   //text controller
   final _controller = TextEditingController();
-//list of items
-  List toDolist = [
-    ["code", true],
-    ["learn", false]
-  ];
 
   void checkboxchanged(bool? value, int index) {
     setState(() {
-      toDolist[index][1] = !toDolist[index][1];
+      db.toDolist[index][1] = !db.toDolist[index][1];
     });
+    db.updateDataBase();
   }
 // save task
 void saveNewTask(){ 
 setState(() {
-  toDolist.add([_controller.text,false]);
+  db.toDolist.add([_controller.text,false]);
   _controller.clear();
 });
 Navigator.of(context).pop();
+db.updateDataBase();
 }
 // create new task dialogbox
   void createNewTask() {
@@ -48,8 +61,9 @@ Navigator.of(context).pop();
   //delete task
   void deleteTask(int index){
     setState(() {
-          toDolist.removeAt(index);
+          db.toDolist.removeAt(index);
     });
+    db.updateDataBase();
   }
 
   @override
@@ -57,7 +71,7 @@ Navigator.of(context).pop();
     return Scaffold(
       backgroundColor: Colors.deepPurple[100],
       appBar: AppBar(
-        title: Center(
+        title: const Center(
             child: Text(
           "TO DO",
           style: TextStyle(color: Colors.white),
@@ -65,7 +79,7 @@ Navigator.of(context).pop();
         backgroundColor: Colors.deepPurple,
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(
+        child: const Icon(
           Icons.add,
           color: Colors.deepPurple,
         ),
@@ -78,11 +92,11 @@ Navigator.of(context).pop();
         children: [
           ListView.builder(
             shrinkWrap: true,
-            itemCount: toDolist.length,
+            itemCount: db.toDolist.length,
             itemBuilder: (context, index) {
               return ToDoTile(
-                taskName: toDolist[index][0],
-                taskComplted: toDolist[index][1],
+                taskName: db.toDolist[index][0],
+                taskComplted: db.toDolist[index][1],
                 onChanged: (value) => checkboxchanged(value, index),
                 deleteFunction: (context) => deleteTask(index),
               );
